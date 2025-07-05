@@ -33,7 +33,7 @@ jobs:
         name: codecov-umbrella
 
     - name: Run E2E tests
-      run: npm run e2e
+      run: npx playwright test
       if: github.ref == 'refs/heads/main'
 
     - name: Performance test

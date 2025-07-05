@@ -1,1 +1,60 @@
-<p>dashboard works!</p>
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <h1>Economic Dashboard</h1>
+    <p>World Bank Economic Data Analysis</p>
+  </header>
+
+  <div class="dashboard-content">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <p>Loading economic data...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="error-state">
+      <p>{{ error }}</p>
+      <button (click)="loadEconomicData()">Retry</button>
+    </div>
+
+    <!-- Data Display -->
+    <div
+      *ngIf="!loading && !error && economicData.length > 0"
+      class="data-display"
+    >
+      <h2>GDP Data by Country</h2>
+
+      <div class="countries-grid">
+        <div *ngFor="let country of getCountries()" class="country-card">
+          <h3>{{ country }}</h3>
+          <div class="country-data">
+            <div
+              *ngFor="let data of getDataForCountry(country)"
+              class="data-point"
+            >
+              <span class="year">{{ data.date }}</span>
+              <span class="value"
+                >{{ data.value | number:'1.0-0' }} {{ data.unit }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="data-summary">
+        <h3>Data Summary</h3>
+        <p>Total records: {{ economicData.length }}</p>
+        <p>Countries: {{ getCountries().length }}</p>
+        <p>Indicator: {{ economicData[0]?.indicatorName }}</p>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      *ngIf="!loading && !error && economicData.length === 0"
+      class="empty-state"
+    >
+      <p>No economic data available</p>
+      <button (click)="loadEconomicData()">Load Data</button>
+    </div>
+  </div>
+</div>
