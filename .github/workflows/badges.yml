@@ -1,0 +1,82 @@
+name: Update Badges
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  update-badges:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests and generate coverage
+      run: npm run test:coverage
+
+    - name: Update coverage badge
+      uses: schneegans/dynamic-badges-action@v1.6.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: your-gist-id-here
+        filename: coverage.json
+        label: coverage
+        message: ${{ steps.coverage.outputs.coverage }}%
+        namedLogo: jest
+        color: green
+        style: flat
+
+    - name: Update build status badge
+      uses: schneegans/dynamic-badges-action@v1.6.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: your-gist-id-here
+        filename: build-status.json
+        label: build
+        message: passing
+        namedLogo: github-actions
+        color: green
+        style: flat
+
+    - name: Update dependencies badge
+      run: |
+        npm outdated --json > outdated.json || echo '{}' > outdated.json
+        OUTDATED_COUNT=$(node -e "console.log(Object.keys(JSON.parse(require('fs').readFileSync('outdated.json', 'utf8'))).length)")
+        echo "outdated_count=$OUTDATED_COUNT" >> $GITHUB_OUTPUT
+
+    - name: Update dependencies badge
+      uses: schneegans/dynamic-badges-action@v1.6.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: your-gist-id-here
+        filename: dependencies.json
+        label: dependencies
+        message: ${{ steps.deps.outputs.outdated_count }} outdated
+        namedLogo: npm
+        color: ${{ steps.deps.outputs.outdated_count == '0' && 'green' || 'orange' }}
+        style: flat
+
+    - name: Commit badge updates
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update badges [skip ci]"
+        git push 
